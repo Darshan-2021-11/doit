@@ -1,8 +1,8 @@
 #ifndef defines_h
 #define defines_h
 
-#define LINE_MAXLEN     1023
 #define MAXLEN           255
+#define MAXPRIORITY        1
 
 #ifdef _WIN32
 	#define HOME_ENV "HOMEPATH"

@@ -27,46 +27,20 @@ main(int argc, char *argv[]) {
 	doit_load_data(data_file);
 	//doit_print_tasks_t((&(doit_tasks_t){}), 0);
 	doit_init_tasks_t();
-	uint16_t idx1 = doit_alloc_task_t();
-	doit_init_task_t(
-			idx1,
-			50,
-			2,
-			UINT16_MAX,
-			UINT16_MAX
-			);
-	/*
-	struct tm *temp = localtime(&tasks.task_list[idx].createdAt);
-	printf("idx1_time: %s", asctime(temp));
-	*/
-	uint16_t idx2 = doit_alloc_task_t();
-	doit_init_task_t(
-			idx2,
-			50,
-			2,
-			idx1,
-			UINT16_MAX
-			);
-
-	uint16_t idx3 = doit_alloc_task_t();
-	doit_init_task_t(
-			idx3,
-			50,
-			2,
-			idx2,
-			UINT16_MAX
-			);
-
-	printf("idx1: %hu, idx2: %hu, idx3, %hu\n", idx1, idx2, idx3);
-	printf("head: %hu\n", tasks.head);
-	doit_free_task_t(idx1);
-	printf("head: %hu\n", tasks.head);
-	printf("head: %hu\n", tasks.head);
-
-	uint16_t idx4 = doit_alloc_task_t();
-	printf("alloc: %hu\n", idx4);
-	uint16_t idx5 = doit_alloc_task_t();
-	printf("alloc: %hu\n", idx5);
-	uint16_t idx6 = doit_alloc_task_t();
-	printf("alloc: %hu\n", idx6);
+	//doit_add_task_t(uint16_t idx, uint16_t name, bool child);
+	(void)doit_add_task_t("task_1", UINT16_MAX, 0);
+	(void)doit_add_task_t("task_2", UINT16_MAX, 0);
+	(void)doit_add_task_t("task_3", UINT16_MAX, 0);
+	(void)doit_add_task_t("task_4", 0, 0);
+	(void)doit_add_task_t("task_4", 0, 1);
+	(void)doit_add_task_t("task_5", 0, 1);
+	(void)doit_add_task_t("task_6", 0, 1);
+	(void)doit_add_task_t("task_7", 3, 1);
+	(void)doit_add_task_t("task_8", 7, 1);
+	(void)doit_add_task_t("task_9", 7, 1);
+	(void)doit_add_task_t("task_10", 7, 1);
+	(void)doit_add_task_t("task_11", 7, 1);
+	(void)doit_add_task_t("task_12", 7, 1);
+	doit_print_tasks_t(doit_tasks[doit_task_priority].head, 0);
+	//printf("sizeof(time_t): %lubytes.\n", sizeof(time_t));
 }

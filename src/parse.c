@@ -43,9 +43,9 @@ doit_dump_data(char *data_file) {
 
 	int flag;
 	flag = fwrite(
-			&tasks,
+			&doit_tasks[doit_task_priority],
 			sizeof (doit_task_t),
-			tasks.size,
+			doit_tasks[doit_task_priority].size,
 			data
 			);
 	if (!flag) goto err;
