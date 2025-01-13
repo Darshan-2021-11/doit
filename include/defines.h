@@ -15,4 +15,5 @@
 #endif
 
 #define CONFIG_PATH     "doit/doitrc"
+#define DATA_PATH       "doit/data"
 #endif //defines_h

@@ -1,31 +1,43 @@
+#include <errno.h>
 #include <stdio.h>
+#include <string.h>
 
 #include "types.h"
 #include "dir_util.h"
 #include "log_util.h"
 
+//TODO
 void
-load_config(const char *config_file) {
+doit_load_config(char *config_file) {
 	(void)config_file;
 }
 
+//TODO
 void
-load_data(const char *data_file) {
+doit_load_data(char *data_file) {
+
+	// does error handling
+	doit_mkdir_p(data_file);
 	FILE *data = fopen(data_file, "r");
-	if (data == NULL)
-		die("Unable to open data file to load data: %s\n", data);
+	if (data == NULL) {
+		doit_warn("Unable to open file to load data: %s, %s\n", data_file, strerror(errno));
+		return;
+	}
 	fclose(data);
 }
 
+//TODO
 void
-dump_config(const char *config_file) {
+doit_dump_config(char *config_file) {
 	(void)config_file;
 }
+
+//TODO
 void
-dump_data(const char *data_file) {
+doit_dump_data(char *data_file) {
 	FILE *data = fopen(data_file, "w");
 	if (data == NULL)
-		die("Unable to open data file to dump data: %s\n", data);
+		doit_die("Unable to open file to dump data: %s, %s\n", data, strerror(errno));
 
 	doit_defrag_tasks_t();
 

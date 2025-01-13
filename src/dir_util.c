@@ -1,3 +1,5 @@
+#include <errno.h>
+#include <string.h>
 #include "log_util.h"
 #include "dir_util.h"
 
@@ -21,16 +23,17 @@ struct stat st;
 #error "Unsupported OS"
 #endif
 
-int MKDIR_P(char *dir) {
+int doit_mkdir_p(char *file) {
 #define RED "\e[0;31m"
 #define NC "\e[0m"
-	char *p = dir, t;
+	char *p = file, t;
 	while (*(++p)) if (*p == '/' || *p == '\\') {
 		t = *p;
 		*p = '\0';
-		if (!DIR_EXISTS(dir)) {
-			if (!MKDIR(dir)) {
-				die("Failed to create directory, '%s'\n", dir);
+		// here `file` exists as directory names
+		if (!DIR_EXISTS(file)) {
+			if (!MKDIR(file)) {
+				doit_die("Failed to create directory '%s', %s\n", file, strerror(errno));
 			}
 		}
 		*p = t;

@@ -8,13 +8,15 @@ doit_tasks_t tasks;
 void
 doit_init_tasks_t(void) {
 	tasks.head = tasks.size = tasks.n = 0;
+#ifdef DEBUG
+	printf("Initialization of tasks completed.\n");
+#endif
 }
 
 void
 doit_init_task_t(uint16_t idx, uint16_t name, uint16_t priority, uint16_t prev, uint16_t parent) {
 	time_t created_At;
 	time(&created_At);
-	printf("Current time (raw): %ld\n", created_At);
 	tasks.task_list[idx] =
 		(doit_task_t) {
 			created_At,
@@ -25,22 +27,35 @@ doit_init_task_t(uint16_t idx, uint16_t name, uint16_t priority, uint16_t prev, 
 			UINT16_MAX,
 			UINT16_MAX,
 		};
+	if (prev != UINT16_MAX)
+		tasks.task_list[prev].next = idx;
+	else if (parent != UINT16_MAX)
+		tasks.task_list[prev].child = idx;
+#ifdef DEBUG
+	printf("tasks.task_list[%d] initialized with given.\n", idx);
+#endif
 }
 
 uint16_t
 doit_alloc_task_t(void) {
 	if (tasks.size == MAXLEN)
-		die(
+		doit_die(
 				"Attempted to allocate more task_t than MAXLEN: %s\n",
 				MAXLEN
 			 );
 	if (tasks.n == tasks.size) {
 		++tasks.size;
+#ifdef DEBUG
+	printf("doit_alloc_task_t(void): allocated new block.\n");
+#endif
 		return tasks.n++;
 	}
 	uint16_t idx;
 	idx = tasks.n;
 	tasks.n = *(int *)(&(tasks.task_list[idx]));
+#ifdef DEBUG
+	printf("doit_alloc_task_t(void): allocated previosly used block.\n");
+#endif
 	return idx;
 }
 
@@ -48,28 +63,43 @@ void
 doit_free_task_t(uint16_t idx) {
 	uint16_t
 		previdx = tasks.task_list[idx].prev,
-						nextidx = tasks.task_list[idx].next,
-						parentidx = tasks.task_list[idx].parent,
-						childidx = tasks.task_list[idx].child;
+		nextidx = tasks.task_list[idx].next,
+		parentidx = tasks.task_list[idx].parent,
+		childidx = tasks.task_list[idx].child;
 
-
-	if (previdx != UINT16_MAX)
-		tasks.task_list[previdx].next = nextidx;
-	else if (parentidx != UINT16_MAX)
-		tasks.task_list[parentidx].child = nextidx;
-	else tasks.head = nextidx;
-
-	if (nextidx != UINT16_MAX)
-		tasks.task_list[nextidx].prev = previdx;
-
-	// recursively delete the child doit_task_t
 	while (childidx != UINT16_MAX)
 		doit_free_task_t(childidx);
+
+
+	if (previdx != UINT16_MAX) {
+#ifdef DEBUG
+	printf("doit_free_task_t(uint16_t): Middle element removed with index: %d.\n", idx);
+#endif
+		tasks.task_list[previdx].next = nextidx;
+		if (nextidx != UINT16_MAX)
+			tasks.task_list[nextidx].prev = previdx;
+	} else if (parentidx != UINT16_MAX) {
+#ifdef DEBUG
+	printf("doit_free_task_t(uint16_t): Level head element removed with index: %d.\n", idx);
+#endif
+		tasks.task_list[parentidx].child = nextidx;
+		if (nextidx != UINT16_MAX)
+			tasks.task_list[nextidx].parent = parentidx;
+	} else {
+#ifdef DEBUG
+	printf("doit_free_task_t(uint16_t): Head element removed with index: %d.\n", idx);
+#endif
+		if (nextidx != UINT16_MAX)
+			tasks.head = nextidx,
+			tasks.task_list[nextidx].prev = previdx;
+		else doit_init_tasks_t();
+	}
 
 	*(int *)(&(tasks.task_list[idx])) = tasks.n;
 	tasks.n = idx;
 }
 
+//TODO
 void
 doit_print_tasks_t(int level) {
 	(void)level;
@@ -94,6 +124,7 @@ doit_print_tasks_t(int level) {
 #undef CNTD
 }
 
+//TODO
 void
 doit_defrag_tasks_t(void) {
 }
