@@ -13,12 +13,14 @@ LOG_WARNING=@echo -e "$(YELLOW)[WARNING]$(RESET) $1"
 
 CC=cc
 SRC_DIR=./src
-BUILD_DIR=./build
 INCLUDE_DIR=./include
+BUILD_DIR=./build
 CFLAGS=-Wall -Wextra --std=c17 -I$(INCLUDE_DIR)
+#-ggdb -DDEBUG
 LDFLAGS=
 
 .PHONY: all clean
+
 all: $(BUILD_DIR) $(BUILD_DIR)/doit
 
 $(BUILD_DIR)/doit: $(BUILD_DIR)/log_util.o $(BUILD_DIR)/dir_util.o $(BUILD_DIR)/types.o $(BUILD_DIR)/parse.o $(BUILD_DIR)/doit.o

@@ -12,17 +12,26 @@ doit_load_config(char *config_file) {
 	(void)config_file;
 }
 
-//TODO
 void
 doit_load_data(char *data_file) {
 
-	// does error handling
-	doit_mkdir_p(data_file);
 	FILE *data = fopen(data_file, "r");
 	if (data == NULL) {
-		doit_warn("Unable to open file to load data: %s, %s\n", data_file, strerror(errno));
+		doit_warn("Unable to load data file: %s, %s\n", data_file, strerror(errno));
+		doit_init_tasks_t();
 		return;
 	}
+
+	int16_t nmemb;
+	nmemb = fread(
+			&doit_tasks[doit_task_priority],
+			sizeof (doit_task_t),
+			MAXLEN,
+			data
+			);
+	if (nmemb < doit_tasks[doit_task_priority].size)
+		fprintf(stderr, "Corrupted data file: %s, %s\n", data_file, strerror(errno));
+
 	fclose(data);
 }
 
@@ -32,24 +41,27 @@ doit_dump_config(char *config_file) {
 	(void)config_file;
 }
 
-//TODO
 void
 doit_dump_data(char *data_file) {
+
+	doit_mkdir_p(data_file);
+
 	FILE *data = fopen(data_file, "w");
-	if (data == NULL)
-		doit_die("Unable to open file to dump data: %s, %s\n", data, strerror(errno));
+	if (data == NULL) {
+		doit_die("Unable to write data file: %s, %s\n", data_file, strerror(errno));
+		return;
+	}
 
-	doit_defrag_tasks_t();
-
-	int flag;
-	flag = fwrite(
+	int16_t nmemb;
+	nmemb = fwrite(
 			&doit_tasks[doit_task_priority],
 			sizeof (doit_task_t),
 			doit_tasks[doit_task_priority].size,
 			data
 			);
-	if (!flag) goto err;
-err:
-	fprintf(stderr, "Unable to dump data: %s", data_file);
+
+	if (nmemb < doit_tasks[doit_task_priority].size)
+		fprintf(stderr, "Unable to dump data: %s, %s\n", data_file, strerror(errno));
+
 	fclose(data);
 }

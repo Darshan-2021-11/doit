@@ -1,8 +1,20 @@
 #ifndef defines_h
 #define defines_h
 
-#define MAXLEN           255
-#define MAXPRIORITY        1
+#include <assert.h>
+
+#define MAXLEN                    254
+#define MAXPRIORITY                 1
+static_assert(MAXLEN != 0,
+	"Task name needs to have some non-zero length.\n");
+static_assert(MAXPRIORITY != 0,
+	"Tasks needs to have some non-zero priority.\n");
+
+#define PROGRAM_STATE_LIST   INT8_MAX
+#define PROGRAM_STATE_ADD           0
+#define PROGRAM_STATE_DELETE        1
+
+#define ERR_INVALID_ARGUMENTS       1
 
 #ifdef _WIN32
 	#define HOME_ENV "HOMEPATH"
