@@ -4,7 +4,7 @@
 #include <assert.h>
 
 #define MAXLEN                    254
-#define MAXPRIORITY                 1
+#define MAXPRIORITY                 2
 static_assert(MAXLEN != 0,
 	"Task name needs to have some non-zero length.\n");
 static_assert(MAXPRIORITY != 0,

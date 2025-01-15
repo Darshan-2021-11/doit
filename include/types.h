@@ -14,9 +14,9 @@ struct _doit_task_t {
 
 	uint16_t
 		prev,
-		parent,
 		next,
-		child,
+		parent,
+		firstChild,
 		lastChild;
 
 	char name[MAXLEN];
@@ -24,29 +24,28 @@ struct _doit_task_t {
 } doit_task_t;
 
 typedef struct _doit_task_alt_t {
-	int unused;
-	int free_ptr;
+	uint16_t
+		unused,
+		nextFree;
 } doit_task_alt_t;
 
 typedef
 struct _doit_tasks_t {
 
 	uint16_t
-		head,
 		size,
-		n,
+		nextFree,
+		firstChild,
 		lastChild;
-
-	doit_task_t
-		task_list[MAXLEN];
 
 } doit_tasks_t;
 
-extern doit_tasks_t doit_tasks[MAXPRIORITY];
-extern int16_t doit_task_priority;
+extern doit_tasks_t doit_task_priority[MAXPRIORITY];
+extern doit_task_t  doit_task_list[MAXPRIORITY][MAXLEN];
+extern int16_t      doit_task_current_priority;
 
 void doit_init_task_t(char name[MAXLEN], uint16_t idx, uint16_t prev, uint16_t parent);
-void doit_init_tasks_t(void);
+void doit_init_tasks_t(uint16_t priority);
 bool doit_check_bounds_tasks_t(uint16_t idx);
 uint16_t doit_alloc_task_t(void);
 void doit_free_task_t(uint16_t idx);

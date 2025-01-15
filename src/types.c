@@ -6,127 +6,104 @@
 #include "types.h"
 #include "log_util.h"
 
-doit_tasks_t doit_tasks[MAXPRIORITY];
-int16_t doit_task_priority = 0;
+doit_tasks_t doit_task_priority[MAXPRIORITY];
+doit_task_t  doit_task_list[MAXPRIORITY][MAXLEN];
+int16_t      doit_task_current_priority;
 
 void
 doit_init_task_t(char name[MAXLEN], uint16_t idx, uint16_t prev, uint16_t parent) {
 	time_t createdAt;
 	time(&createdAt);
 	{
-		doit_tasks[doit_task_priority].task_list[idx].createdAt = createdAt,
-		doit_tasks[doit_task_priority].task_list[idx].prev = prev,
-		doit_tasks[doit_task_priority].task_list[idx].parent = parent,
-		doit_tasks[doit_task_priority].task_list[idx].next = UINT16_MAX,
-		doit_tasks[doit_task_priority].task_list[idx].child = UINT16_MAX,
-		doit_tasks[doit_task_priority].task_list[idx].lastChild = UINT16_MAX;
-		char *dest = doit_tasks[doit_task_priority].task_list[idx].name,
+		doit_task_list[doit_task_current_priority][idx].createdAt = createdAt,
+		doit_task_list[doit_task_current_priority][idx].prev = prev,
+		doit_task_list[doit_task_current_priority][idx].parent = parent,
+		doit_task_list[doit_task_current_priority][idx].next = UINT16_MAX,
+		doit_task_list[doit_task_current_priority][idx].firstChild = UINT16_MAX,
+		doit_task_list[doit_task_current_priority][idx].lastChild = UINT16_MAX;
+		char *dest = doit_task_list[doit_task_current_priority][idx].name,
 				 *src  = name;
 		while (*src && src - name < MAXLEN - 1) *dest++ = *src++;
 		*dest = '\0';
 	}
 	if (prev != UINT16_MAX)
-		doit_tasks[doit_task_priority].task_list[prev].next = idx;
+		doit_task_list[doit_task_current_priority][prev].next = idx;
 	else if (parent != UINT16_MAX)
-		doit_tasks[doit_task_priority].task_list[parent].child = idx;
-#ifdef DEBUG
-	printf("void doit_init_task_t(char[], uint16_t, uint16_t, uint16_t): initialized doit_tasks[%d].task_list[%d], %s.\n", doit_task_priority, idx, name);
-#endif
+		doit_task_list[doit_task_current_priority][parent].firstChild = idx;
 }
 
 void
-doit_init_tasks_t(void) {
-	doit_tasks[doit_task_priority].size = doit_tasks[doit_task_priority].n = 0;
-	doit_tasks[doit_task_priority].head = doit_tasks[doit_task_priority].lastChild = UINT16_MAX;
-#ifdef DEBUG
-	printf("void doit_init_tasks_t(void): initialization of doit_tasks_t[%d] completed.\n", doit_task_priority);
-#endif
+doit_init_tasks_t(uint16_t priority) {
+	doit_task_priority[priority] = (doit_tasks_t) {
+		.size = 0,
+		.nextFree = 0,
+		.firstChild = UINT16_MAX,
+		.lastChild = UINT16_MAX,
+	};
 }
 
 bool
 doit_check_bounds_tasks_t(uint16_t idx) {
 	return 
-		idx >= doit_tasks[doit_task_priority].size ||
-		((doit_task_alt_t *)&doit_tasks[doit_task_priority].task_list[idx])->unused == UINT16_MAX;
+		idx >= doit_task_priority[doit_task_current_priority].size ||
+		((doit_task_alt_t *)&doit_task_list[doit_task_current_priority][idx])->unused == UINT16_MAX;
 }
 
 uint16_t
 doit_alloc_task_t(void) {
-	if (doit_tasks[doit_task_priority].size == MAXLEN) {
+	if (doit_task_priority[doit_task_current_priority].size == MAXLEN) {
 		doit_warn("Stop procastinating, its already too much.\n");
-		/*
-			 doit_die(
-			 "uint16_t doit_alloc_task_t(void): Attempted to allocate more task_t than MAXLEN: %d\n",
-			 MAXLEN
-			 );
-			 */
-		doit_die(
-				"Attempted to add more task than %d.\n",
-				MAXLEN
-				);
+		doit_die( "Attempted to add more task than %d.\n", MAXLEN);
 	}
-	if (doit_tasks[doit_task_priority].n == doit_tasks[doit_task_priority].size) {
-		++doit_tasks[doit_task_priority].size;
-#ifdef DEBUG
-		printf("uint16_t doit_alloc_task_t(void): allocated new block doit_tasks[%d].task_list[%d].\n", doit_task_priority, doit_tasks[doit_task_priority].n);
-#endif
-		return doit_tasks[doit_task_priority].n++;
+	if (doit_task_priority[doit_task_current_priority].nextFree == doit_task_priority[doit_task_current_priority].size) {
+		++doit_task_priority[doit_task_current_priority].size;
+		return doit_task_priority[doit_task_current_priority].nextFree++;
 	}
-	uint16_t idx;
-	idx = doit_tasks[doit_task_priority].n;
-	doit_tasks[doit_task_priority].n = ((doit_task_alt_t *)&doit_tasks[doit_task_priority].task_list[idx])->free_ptr;
-#ifdef DEBUG
-	printf("uint16_t doit_alloc_task_t(void): allocated new block doit_tasks[%d].task_list[%d].\n", doit_task_priority, doit_tasks[doit_task_priority].n);
-#endif
-
+	uint16_t idx = doit_task_priority[doit_task_current_priority].nextFree;
+	doit_task_priority[doit_task_current_priority].nextFree =
+		((doit_task_alt_t *)&doit_task_list[doit_task_current_priority][idx])->nextFree;
 	return idx;
 }
 
 void
 doit_free_task_t(uint16_t idx) {
 	uint16_t
-		previdx = doit_tasks[doit_task_priority].task_list[idx].prev,
-						nextidx = doit_tasks[doit_task_priority].task_list[idx].next,
-						parentidx = doit_tasks[doit_task_priority].task_list[idx].parent,
-						childidx = doit_tasks[doit_task_priority].task_list[idx].child;
+		prev = doit_task_list[doit_task_current_priority][idx].prev,
+		next = doit_task_list[doit_task_current_priority][idx].next,
+		parent = doit_task_list[doit_task_current_priority][idx].parent,
+		firstChild = doit_task_list[doit_task_current_priority][idx].firstChild;
 
-	while (childidx != UINT16_MAX)
-		doit_free_task_t(childidx), childidx = doit_tasks[doit_task_priority].task_list[idx].child;
+	while (firstChild != UINT16_MAX)
+		doit_free_task_t(firstChild), firstChild = doit_task_list[doit_task_current_priority][idx].firstChild;
 
-	if (previdx != UINT16_MAX) {
-#ifdef DEBUG
-		printf("void doit_free_task_t(uint16_t): freed block doit_tasks[%d].task_list[%d], %s.\n", doit_task_priority, idx, doit_tasks[doit_task_priority].task_list[idx].name);
-#endif
-		doit_tasks[doit_task_priority].task_list[previdx].next = nextidx;
-		if (nextidx != UINT16_MAX)
-			doit_tasks[doit_task_priority].task_list[nextidx].prev = previdx;
-		else if (parentidx != UINT16_MAX)
-			doit_tasks[doit_task_priority].task_list[parentidx].lastChild = previdx;
+	if (prev != UINT16_MAX) {
+		doit_task_list[doit_task_current_priority][prev].next = next;
+		if (next != UINT16_MAX)
+			doit_task_list[doit_task_current_priority][next].prev = prev;
+		else if (parent != UINT16_MAX)
+			doit_task_list[doit_task_current_priority][parent].lastChild = prev;
 		else
-			doit_tasks[doit_task_priority].lastChild = previdx;
-	} else if (parentidx != UINT16_MAX) {
-#ifdef DEBUG
-		printf("void doit_free_task_t(uint16_t): freed block doit_tasks[%d].task_list[%d], %s.\n", doit_task_priority, idx, doit_tasks[doit_task_priority].task_list[idx].name);
-#endif
-		doit_tasks[doit_task_priority].task_list[parentidx].child = nextidx;
-		if (nextidx != UINT16_MAX)
-			doit_tasks[doit_task_priority].task_list[nextidx].prev = previdx;
+			doit_task_priority[doit_task_current_priority].lastChild = prev;
+	} else if (parent != UINT16_MAX) {
+		doit_task_list[doit_task_current_priority][parent].firstChild = next;
+		if (next != UINT16_MAX)
+			doit_task_list[doit_task_current_priority][next].prev = prev;
 	} else {
-#ifdef DEBUG
-		printf("void doit_free_task_t(uint16_t): freed head block doit_tasks[%d].task_list[%d], %s.\n", doit_task_priority, idx, doit_tasks[doit_task_priority].task_list[idx].name);
-#endif
-		if (nextidx != UINT16_MAX)
-			doit_tasks[doit_task_priority].task_list[nextidx].prev = previdx,
-			doit_tasks[doit_task_priority].head = nextidx;
-		else
-			doit_init_tasks_t();
+		if (next != UINT16_MAX) {
+			doit_task_list[doit_task_current_priority][next].prev = prev,
+			doit_task_priority[doit_task_current_priority].firstChild = next;
+		}
+		else {
+			doit_init_tasks_t(doit_task_current_priority);
+			return;
+		}
 	}
-	*(doit_task_alt_t *)&doit_tasks[doit_task_priority].task_list[idx] =
+	*(doit_task_alt_t *)&doit_task_list[doit_task_current_priority][idx] =
 		(doit_task_alt_t) {
 			UINT16_MAX,
-			doit_tasks[doit_task_priority].n
+			doit_task_priority[doit_task_current_priority].nextFree,
 		};
-	doit_tasks[doit_task_priority].n = idx;
+	doit_task_priority[doit_task_current_priority].nextFree = idx;
 }
 
 uint16_t
@@ -135,34 +112,32 @@ doit_add_task_t(char name[MAXLEN], uint16_t idx, bool child) {
 			idx != UINT16_MAX &&
 			doit_check_bounds_tasks_t(idx)
 		 ) {
-#ifdef DEBUG
-		//printf("uint16_t doit_add_task_t(char [], uint16_t, bool): block with index: %d, does not exist in doit_tasks[%d].\n", doit_task_priority);
-		printf("Task with id: %d, does not exist.\n", idx);
-#endif
+		doit_die("Task with id: %d, does not exist.\n", idx);
 		return UINT16_MAX;
 	}
 	uint16_t allocated = doit_alloc_task_t();
 	if (!child) {
-		if (idx != UINT16_MAX) idx = doit_tasks[doit_task_priority].task_list[idx].parent;
+		if (idx != UINT16_MAX) idx = doit_task_list[doit_task_current_priority][idx].parent;
 	}
 	if (idx == UINT16_MAX) {
 		doit_init_task_t(
 				name,
 				allocated,
-				doit_tasks[doit_task_priority].lastChild,
+				doit_task_priority[doit_task_current_priority].lastChild,
 				UINT16_MAX
 				);
-		doit_tasks[doit_task_priority].lastChild = allocated;
-		if (doit_tasks[doit_task_priority].head == UINT16_MAX)
-			doit_tasks[doit_task_priority].head = allocated;
+
+		doit_task_priority[doit_task_current_priority].lastChild = allocated;
+		if (doit_task_priority[doit_task_current_priority].firstChild == UINT16_MAX)
+			doit_task_priority[doit_task_current_priority].firstChild = allocated;
 	} else {
 		doit_init_task_t(
 				name,
 				allocated,
-				doit_tasks[doit_task_priority].task_list[idx].lastChild,
+				doit_task_list[doit_task_current_priority][idx].lastChild,
 				idx
 				);
-		doit_tasks[doit_task_priority].task_list[idx].lastChild = allocated;
+		doit_task_list[doit_task_current_priority][idx].lastChild = allocated;
 	}
 	printf("Task added successfully.\n");
 	return allocated;
@@ -171,8 +146,7 @@ doit_add_task_t(char name[MAXLEN], uint16_t idx, bool child) {
 void
 doit_delete_task_t(uint16_t idx) {
 	if (doit_check_bounds_tasks_t(idx)) {
-		//printf("void doit_free_task_t(void): block with index: %d, does not exist in doit_tasks[%d].\n", doit_task_priority);
-		printf("Task with id: %d, does not exist.\n", idx);
+		doit_die("Task with id: %d, does not exist.\n", idx);
 		return;
 	}
 	doit_free_task_t(idx);
@@ -181,7 +155,7 @@ doit_delete_task_t(uint16_t idx) {
 
 void
 doit_print_task_t(uint16_t idx) {
-	struct tm *temp = localtime(&doit_tasks[doit_task_priority].task_list[idx].createdAt);
+	struct tm *temp = localtime(&doit_task_list[doit_task_current_priority][idx].createdAt);
 	char buffer[32];
 	strftime(
 			buffer,
@@ -193,7 +167,7 @@ doit_print_task_t(uint16_t idx) {
 			"(%hu) %s\t%s\n",
 			idx,
 			buffer,
-			doit_tasks[doit_task_priority].task_list[idx].name
+			doit_task_list[doit_task_current_priority][idx].name
 			);
 }
 
@@ -219,17 +193,17 @@ static bool list[MAXLEN];
 
 void
 doit_print_tasks_t_helper(uint16_t idx, uint16_t level) {
-	list[level] = doit_tasks[doit_task_priority].task_list[idx].next != UINT16_MAX;
+	list[level] = doit_task_list[doit_task_current_priority][idx].next != UINT16_MAX;
 
 	for (uint16_t i = 0; i < level; ++i)
 		printf("%s", list[i] ? lvl_cntd : lvl_dcntd);
 	printf("%s", list[level] ? next : last);
 	doit_print_task_t(idx);
 
-	if (doit_tasks[doit_task_priority].task_list[idx].child != UINT16_MAX)
-		doit_print_tasks_t_helper(doit_tasks[doit_task_priority].task_list[idx].child, level + 1);
-	if (doit_tasks[doit_task_priority].task_list[idx].next != UINT16_MAX)
-		doit_print_tasks_t_helper(doit_tasks[doit_task_priority].task_list[idx].next, level);
+	if (doit_task_list[doit_task_current_priority][idx].firstChild != UINT16_MAX)
+		doit_print_tasks_t_helper(doit_task_list[doit_task_current_priority][idx].firstChild, level + 1);
+	if (doit_task_list[doit_task_current_priority][idx].next != UINT16_MAX)
+		doit_print_tasks_t_helper(doit_task_list[doit_task_current_priority][idx].next, level);
 }
 #undef END_GRAPHIC
 #undef BEGIN_BOLD
@@ -242,53 +216,65 @@ doit_print_tasks_t_helper(uint16_t idx, uint16_t level) {
 
 void
 doit_print_tasks_t(uint16_t idx) {
-	if (idx == UINT16_MAX) idx = doit_tasks[doit_task_priority].head;
-	if (
-			doit_tasks[doit_task_priority].head == UINT16_MAX ||
-			doit_check_bounds_tasks_t(idx)
-		 )
-		return;
+	if (doit_task_priority[doit_task_current_priority].firstChild == UINT16_MAX)
+		doit_die("No task exists with priority %d.\n", doit_task_current_priority);
+	else if (idx != UINT16_MAX && doit_check_bounds_tasks_t(idx))
+		doit_die("Task with id: %d, does not exist with priority %d.\n", idx, doit_task_current_priority);
 
-	doit_print_tasks_t_helper(idx, 0);
+	if (idx == UINT16_MAX) {
+		doit_print_tasks_t_helper(doit_task_priority[doit_task_current_priority].firstChild, 0);
+	}
+	else {
+		doit_print_task_t(idx);
+		if (doit_task_list[doit_task_current_priority][idx].firstChild != UINT16_MAX)
+			doit_print_tasks_t_helper(doit_task_list[doit_task_current_priority][idx].firstChild, 0);
+	}
 }
 
 void
 doit_defrag_tasks_t(void) {
-	if (!doit_tasks[doit_task_priority].size) return;
-	uint16_t l = 0, r = doit_tasks[doit_task_priority].size - 1, t;
+	if (!doit_task_priority[doit_task_current_priority].size) return;
+
+	uint16_t l = 0, r = doit_task_priority[doit_task_current_priority].size - 1, t;
 	while (l <= r) {
-		if (((doit_task_alt_t *)&doit_tasks[doit_task_priority].task_list[r])->unused == UINT16_MAX)
+		if (((doit_task_alt_t *)&doit_task_list[doit_task_current_priority][r])->unused == UINT16_MAX)
 			--r;
-		else if (((doit_task_alt_t *)&doit_tasks[doit_task_priority].task_list[l])->unused != UINT16_MAX)
+		else if (((doit_task_alt_t *)&doit_task_list[doit_task_current_priority][l])->unused != UINT16_MAX)
 			++l;
 		else {
 			{
-				// copy r to l
-				doit_tasks[doit_task_priority].task_list[l].createdAt = doit_tasks[doit_task_priority].task_list[r].createdAt,
-				doit_tasks[doit_task_priority].task_list[l].prev = doit_tasks[doit_task_priority].task_list[r].prev,
-				doit_tasks[doit_task_priority].task_list[l].parent = doit_tasks[doit_task_priority].task_list[r].parent,
-				doit_tasks[doit_task_priority].task_list[l].next = doit_tasks[doit_task_priority].task_list[r].next,
-				doit_tasks[doit_task_priority].task_list[l].child = doit_tasks[doit_task_priority].task_list[r].child,
-				doit_tasks[doit_task_priority].task_list[l].lastChild = doit_tasks[doit_task_priority].task_list[r].lastChild;
-				char *dest = doit_tasks[doit_task_priority].task_list[l].name,
-						 *src  = doit_tasks[doit_task_priority].task_list[r].name;
-				while (*src && src - doit_tasks[doit_task_priority].task_list[r].name < MAXLEN - 1) *dest++ = *src++;
+				doit_task_list[doit_task_current_priority][l].createdAt = doit_task_list[doit_task_current_priority][r].createdAt,
+				doit_task_list[doit_task_current_priority][l].prev = doit_task_list[doit_task_current_priority][r].prev,
+				doit_task_list[doit_task_current_priority][l].parent = doit_task_list[doit_task_current_priority][r].parent,
+				doit_task_list[doit_task_current_priority][l].next = doit_task_list[doit_task_current_priority][r].next,
+				doit_task_list[doit_task_current_priority][l].firstChild = doit_task_list[doit_task_current_priority][r].firstChild,
+				doit_task_list[doit_task_current_priority][l].lastChild = doit_task_list[doit_task_current_priority][r].lastChild;
+				char *dest = doit_task_list[doit_task_current_priority][l].name,
+						 *src  = doit_task_list[doit_task_current_priority][r].name;
+				while (*src && src - doit_task_list[doit_task_current_priority][r].name < MAXLEN - 1) *dest++ = *src++;
 				*dest = '\0';
 			}
 
-			if ((t = doit_tasks[doit_task_priority].task_list[l].prev) != UINT16_MAX)
-				doit_tasks[doit_task_priority].task_list[t].next = l;
-			if ((t = doit_tasks[doit_task_priority].task_list[l].next) != UINT16_MAX)
-				doit_tasks[doit_task_priority].task_list[t].prev = l;
+			if ((t = doit_task_list[doit_task_current_priority][l].prev) != UINT16_MAX)
+				doit_task_list[doit_task_current_priority][t].next = l;
+			if ((t = doit_task_list[doit_task_current_priority][l].next) != UINT16_MAX)
+				doit_task_list[doit_task_current_priority][t].prev = l;
 
-			if (doit_tasks[doit_task_priority].head == r)
-				doit_tasks[doit_task_priority].head = l;
-			if (doit_tasks[doit_task_priority].lastChild == r)
-				doit_tasks[doit_task_priority].lastChild = l;
+			if ((t = doit_task_list[doit_task_current_priority][l].parent) != UINT16_MAX) {
+				if (doit_task_list[doit_task_current_priority][t].firstChild == r)
+					doit_task_list[doit_task_current_priority][t].firstChild = l;
+				if (doit_task_list[doit_task_current_priority][t].lastChild == r)
+					doit_task_list[doit_task_current_priority][t].lastChild = l;
+			} else {
+				if (doit_task_priority[doit_task_current_priority].firstChild == r)
+					doit_task_priority[doit_task_current_priority].firstChild = l;
+				if (doit_task_priority[doit_task_current_priority].lastChild == r)
+					doit_task_priority[doit_task_current_priority].lastChild = l;
+			}
 
 			++l, --r;
 		}
-		doit_tasks[doit_task_priority].size = l,
-			doit_tasks[doit_task_priority].n = l;
 	}
+	doit_task_priority[doit_task_current_priority].size = l,
+	doit_task_priority[doit_task_current_priority].nextFree = l;
 }

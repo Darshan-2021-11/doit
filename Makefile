@@ -15,8 +15,7 @@ CC=cc
 SRC_DIR=./src
 INCLUDE_DIR=./include
 BUILD_DIR=./build
-CFLAGS=-Wall -Wextra --std=c17 -I$(INCLUDE_DIR)
-#-ggdb -DDEBUG
+CFLAGS=-Wall -Wextra --std=c17 -I$(INCLUDE_DIR) -ggdb3
 LDFLAGS=
 
 .PHONY: all clean
