@@ -41,7 +41,7 @@ usage:
 					if (doit_task_current_priority < MAXPRIORITY) break;
 				}
 				goto usage;
-				
+
 			default:
 				goto usage;
 		}
@@ -50,44 +50,28 @@ usage:
 	if (data_path != NULL)
 		snprintf(data_file, sizeof(data_path), "%s", data_path);
 	else
-	snprintf(data_file, sizeof(data_file), "%s/%s/%s", getenv(HOME_ENV), ".local/share", DATA_PATH);
+		snprintf(data_file, sizeof(data_file), "%s/%s/%s", getenv(HOME_ENV), ".local/share", DATA_PATH);
 	doit_load_data(data_file);
 
 
 	if (optind >= argc) goto usage;
 	else {
 		if (strcmp(argv[optind], "list") == 0) {
-		 doit_print_tasks_t(id);
+			doit_print_tasks_t(id);
 
 		} else if (strcmp(argv[optind], "del") == 0) {
-		 doit_delete_task_t(id);
-		 doit_defrag_tasks_t();
-		 doit_dump_data(data_file);
+			doit_delete_task_t(id);
+			doit_defrag_tasks_t();
+			doit_dump_data(data_file);
 
 		} else if (strcmp(argv[optind], "add") == 0) {
 			if (optind == argc - 1) goto usage;
-		 doit_add_task_t(argv[optind + 1], id, child);
-		 doit_dump_data(data_file);
+			doit_add_task_t(argv[optind + 1], id, child);
+			doit_dump_data(data_file);
 
 
 		} else goto usage;
 	}
-
-
-
-	/*
-		 home_env = getenv(HOME_ENV);
-		 if (config_path == NULL) {
-		 char *config_home = getenv(CONFIG_HOME_ENV);
-		 if (config_home != NULL)
-		 snprintf(config_file, sizeof(config_file), "%s/%s", config_home, CONFIG_PATH);
-		 else
-		 snprintf(config_file, sizeof(config_file), "%s/%s/%s", home_env, ".config", CONFIG_PATH);
-		 } else {
-		 snprintf(config_file, sizeof(config_file), "%s", config_path);
-		 }
-		 snprintf(data_file, sizeof(data_file), "%s/%s/%s", home_env, ".local/share", DATA_PATH);
-	*/
 }
 
 void doit_usage(char *prg) {
