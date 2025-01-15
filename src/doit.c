@@ -84,5 +84,5 @@ void doit_usage(char *prg) {
 			"list :\t List tasks in tree format, specifying id(number) with `-n` to shows subtasks.\n"
 			"-p   :\t Give the priority(number [0 - %d]) of task specified. Defaults to 0.\n"
 			"help :\t Show this help command.\n",
-			prg, MAXPRIORITY);
+			prg, MAXPRIORITY - 1);
 }
