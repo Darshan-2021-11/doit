@@ -66,10 +66,9 @@ usage:
 
 		} else if (strcmp(argv[optind], "add") == 0) {
 			if (optind == argc - 1) goto usage;
-			doit_add_task_t(argv[optind + 1], id, child);
+			for (int i = optind + 1; i < argc; ++i)
+				doit_add_task_t(argv[i], id, child);
 			doit_dump_data(data_file);
-
-
 		} else goto usage;
 	}
 }
@@ -79,7 +78,7 @@ void doit_usage(char *prg) {
 			"Usage:\n"
 			"%s [options]\n"
 			"Options:\n"
-			"add  :\t Add a task. Specify task using quotes. Defaults to top level.\n"
+			"add  :\t Add task(s). Specify task using quotes. Defaults to top level.\n"
 			"      \t Specify id(number) with `-n` flag to add subtask or with `-a` to add it to its level.\n"
 			"del  :\t Delete a task, specifying the id(number) with `-n` flag.\n"
 			"list :\t List tasks in tree format, specifying id(number) with `-n` to shows subtasks.\n"
