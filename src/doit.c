@@ -51,20 +51,22 @@ usage:
 		snprintf(data_file, sizeof(data_path), "%s", data_path);
 	else
 		snprintf(data_file, sizeof(data_file), "%s/%s/%s", getenv(HOME_ENV), ".local/share", DATA_PATH);
-	doit_load_data(data_file);
 
 
 	if (optind >= argc) goto usage;
 	else {
 		if (strcmp(argv[optind], "list") == 0) {
+			doit_load_data(data_file);
 			doit_print_tasks_t(id);
 
 		} else if (strcmp(argv[optind], "del") == 0) {
+			doit_load_data(data_file);
 			doit_delete_task_t(id);
 			doit_defrag_tasks_t();
 			doit_dump_data(data_file);
 
 		} else if (strcmp(argv[optind], "add") == 0) {
+			doit_load_data(data_file);
 			if (optind == argc - 1) goto usage;
 			for (int i = optind + 1; i < argc; ++i)
 				doit_add_task_t(argv[i], id, child);
