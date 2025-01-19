@@ -54,25 +54,24 @@ usage:
 
 
 	if (optind >= argc) goto usage;
-	else {
-		if (strcmp(argv[optind], "list") == 0) {
-			doit_load_data(data_file);
-			doit_print_tasks_t(id);
 
-		} else if (strcmp(argv[optind], "del") == 0) {
-			doit_load_data(data_file);
-			doit_delete_task_t(id);
-			doit_defrag_tasks_t();
-			doit_dump_data(data_file);
+	if (strcmp(argv[optind], "list") == 0) {
+		doit_load_data(data_file);
+		doit_print_tasks_t(id);
 
-		} else if (strcmp(argv[optind], "add") == 0) {
-			doit_load_data(data_file);
-			if (optind == argc - 1) goto usage;
-			for (int i = optind + 1; i < argc; ++i)
-				doit_add_task_t(argv[i], id, child);
-			doit_dump_data(data_file);
-		} else goto usage;
-	}
+	} else if (strcmp(argv[optind], "del") == 0) {
+		doit_load_data(data_file);
+		doit_delete_task_t(id);
+		doit_defrag_tasks_t();
+		doit_dump_data(data_file);
+
+	} else if (strcmp(argv[optind], "add") == 0) {
+		doit_load_data(data_file);
+		if (optind == argc - 1) goto usage;
+		for (int i = optind + 1; i < argc; ++i)
+			doit_add_task_t(argv[i], id, child);
+		doit_dump_data(data_file);
+	} else goto usage;
 }
 
 void doit_usage(char *prg) {
@@ -81,10 +80,13 @@ void doit_usage(char *prg) {
 			"%s [options]\n"
 			"Options:\n"
 			"add  :\t Add task(s). Specify task using quotes. Defaults to top level.\n"
-			"      \t Specify id(number) with `-n` flag to add subtask or with `-a` to add it to its level.\n"
+			"      \t Can be used with -n and -a flag.\n"
 			"del  :\t Delete a task, specifying the id(number) with `-n` flag.\n"
-			"list :\t List tasks in tree format, specifying id(number) with `-n` to shows subtasks.\n"
-			"-p   :\t Give the priority(number [0 - %d]) of task specified. Defaults to 0.\n"
+			"list :\t List all tasks in tree format, specifying id(number) with `-n` to shows subtasks.\n"
+			"-a   :\t Make add operation adjacent to the task instead of adding as child.\n"
+			"-n   :\t Specify id of the task to be used in options. Must be an integer.\n"
+			"      \t Must be the one present while listing.\n"
+			"-p   :\t Give the priority(number [0 - %d]) of task specified. Defaults to 0. Must be an integer.\n"
 			"help :\t Show this help command.\n",
 			prg, MAXPRIORITY - 1);
 }
